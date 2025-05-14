@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendário 1925-2025</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .panel {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+        }
+        .panel h2 {
+            color: #3498db;
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .month-item {
+            padding: 8px;
+            background-color: #f0f8ff;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .leap-year {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .leap-list {
+            columns: 3;
+            column-gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .month-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .leap-list {
+                columns: 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Calendário Histórico (1925-2025)</h1>
+    
+    <div class="container">
+        <!-- Painel 1: Verificar ano bissexto -->
+        <div class="panel">
+            <h2>Verificar Ano Bissexto</h2>
+            <div>
+                <input type="number" id="leapYearInput" min="1925" max="2025" placeholder="Digite um ano">
+                <button onclick="checkLeapYear()">Verificar</button>
+            </div>
+            <div id="leapYearResult" class="result"></div>
+        </div>
+        
+        <!-- Painel 2: Dias em um mês -->
+        <div class="panel">
+            <h2>Dias em um Mês</h2>
+            <div>
+                <select id="monthSelect">
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+                <input type="number" id="daysYearInput" min="1925" max="2025" placeholder="Ano">
+                <button onclick="getDaysInMonth()">Consultar</button>
+            </div>
+            <div id="daysInMonthResult" class="result"></div>
+        </div>
+        
+        <!-- Painel 3: Calendário completo -->
+        <div class="panel">
+            <h2>Calendário Completo</h2>
+            <div>
+                <input type="number" id="fullYearInput" min="1925" max="2025" placeholder="Digite um ano">
+                <button onclick="generateFullCalendar()">Gerar Calendário</button>
+            </div>
+            <div id="fullCalendarResult" class="result"></div>
+        </div>
+        
+        <!-- Painel 4: Anos bissextos -->
+        <div class="panel">
+            <h2>Todos os Anos Bissextos</h2>
+            <button onclick="listAllLeapYears()">Mostrar Anos Bissextos (1925-2025)</button>
+            <div id="allLeapYearsResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        class Calendario {
+            constructor() {
+                this.meses = [
+                    { nome: 'Janeiro', dias: 31 },
+                    { nome: 'Fevereiro', dias: (ano) => this.ehBissexto(ano) ? 29 : 28 },
+                    { nome: 'Março', dias: 31 },
+                    { nome: 'Abril', dias: 30 },
+                    { nome: 'Maio', dias: 31 },
+                    { nome: 'Junho', dias: 30 },
+                    { nome: 'Julho', dias: 31 },
+                    { nome: 'Agosto', dias: 31 },
+                    { nome: 'Setembro', dias: 30 },
+                    { nome: 'Outubro', dias: 31 },
+                    { nome: 'Novembro', dias: 30 },
+                    { nome: 'Dezembro', dias: 31 }
+                ];
+            }
+
+            ehBissexto(ano) {
+                return (ano % 4 === 0 && ano % 100 !== 0) || (ano % 400 === 0);
+            }
+
+            diasNoMes(mes, ano) {
+                if (mes < 1 || mes > 12) return 0;
+                
+                const mesInfo = this.meses[mes - 1];
+                return typeof mesInfo.dias === 'function' ? mesInfo.dias(ano) : mesInfo.dias;
+            }
+
+            gerarCalendarioAno(ano) {
+                if (ano < 1925 || ano > 2025) {
+                    return { error: 'Ano fora do intervalo permitido (1925-2025)' };
+                }
+
+                const calendario = {
+                    ano: ano,
+                    bissexto: this.ehBissexto(ano),
+                    meses: []
+                };
+
+                this.meses.forEach((mes, index) => {
+                    const dias = this.diasNoMes(index + 1, ano);
+                    calendario.meses.push({
+                        nome: mes.nome,
+                        dias: dias
+                    });
+                });
+
+                return calendario;
+            }
+
+            listarAnosBissextos() {
+                const anosBissextos = [];
+                for (let ano = 1925; ano <= 2025; ano++) {
+                    if (this.ehBissexto(ano)) {
+                        anosBissextos.push(ano);
+                    }
+                }
+                return anosBissextos;
+            }
+        }
+
+        // Instância do calendário
+        const calendario = new Calendario();
+
+        // Funções para interação com a interface
+        function checkLeapYear() {
+            const yearInput = document.getElementById('leapYearInput');
+            const resultDiv = document.getElementById('leapYearResult');
+            
+            const year = parseInt(yearInput.value);
+            
+            if (isNaN(year) {
+                resultDiv.innerHTML = '<p>Por favor, digite um ano válido.</p>';
+                return;
+            }
+            
+            if (year < 1925 || year > 2025) {
+                resultDiv.innerHTML = `<p>O ano ${year} está fora do intervalo permitido (1925-2025).</p>`;
+                return;
+            }
+            
+            const isLeap = calendario.ehBissexto(year);
+            resultDiv.innerHTML = `<p>O ano ${year} <span class="${isLeap ? 'leap-year' : ''}">${isLeap ? 'É' : 'NÃO É'}</span> bissexto.</p>`;
+        }
+
+        function getDaysInMonth() {
+            const monthSelect = document.getElementById('monthSelect');
+            const yearInput = document.getElementById('daysYearInput');
+            const resultDiv = document.getElementById('daysInMonthResult');
+            
+            const month = parseInt(monthSelect.value);
+            const year = parseInt(yearInput.value);
+            
+            if (isNaN(year)) {
+                resultDiv.innerHTML = '<p>Por favor, digite um ano válido.</p>';
+                return;
+            }
+            
+            if (year < 1925 || year > 2025) {
+                resultDiv.innerHTML = `<p>O ano ${year} está fora do intervalo permitido (1925-2025).</p>`;
+                return;
+            }
+            
+            const days = calendario.diasNoMes(month, year);
+            const monthName = calendario.meses[month - 1].nome;
+            const isFebruary = month === 2;
+            
+            let message = `<p>${monthName} de ${year} tem <strong>${days} dias</strong>.</p>`;
+            
+            if (isFebruary) {
+                message += `<p>Fevereiro tem ${days} dias porque ${year} ${calendario.ehBissexto(year) ? 'é' : 'não é'} bissexto.</p>`;
+            }
+            
+            resultDiv.innerHTML = message;
+        }
+
+        function generateFullCalendar() {
+            const yearInput = document.getElementById('fullYearInput');
+            const resultDiv = document.getElementById('fullCalendarResult');
+            
+            const year = parseInt(yearInput.value);
+            
+            if (isNaN(year)) {
+                resultDiv.innerHTML = '<p>Por favor, digite um ano válido.</p>';
+                return;
+            }
+            
+            if (year < 1925 || year > 2025) {
+                resultDiv.innerHTML = `<p>O ano ${year} está fora do intervalo permitido (1925-2025).</p>`;
+                return;
+            }
+            
+            const calendar = calendario.gerarCalendarioAno(year);
+            
+            let html = `<h3>Calendário de ${year} (${calendar.bissexto ? 'Ano Bissexto' : 'Ano Não-Bissexto'})</h3>`;
+            html += '<div class="month-grid">';
+            
+            calendar.meses.forEach(month => {
+                html += `
+                    <div class="month-item">
+                        <strong>${month.nome}</strong><br>
+                        Dias: ${month.days}
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function listAllLeapYears() {
+            const resultDiv = document.getElementById('allLeapYearsResult');
+            const leapYears = calendario.listarAnosBissextos();
+            
+            let html = '<h3>Anos Bissextos entre 1925 e 2025:</h3>';
+            html += '<div class="leap-list"><ul>';
+            
+            leapYears.forEach(year => {
+                html += `<li>${year}</li>`;
+            });
+            
+            html += '</ul></div>';
+            html += `<p>Total: ${leapYears.length} anos bissextos no período.</p>`;
+            
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
